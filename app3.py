@@ -12,7 +12,6 @@ import streamlit as st
 import sqlite3
 import pandas as pd
 from datetime import datetime
-import plotly.express as px
 
 conn = sqlite3.connect("inventory.db", check_same_thread=False)
 cursor = conn.cursor()
@@ -202,7 +201,6 @@ elif menu == "Dashboard":
     if not df.empty:
         st.subheader("Current Stock Levels")
         st.bar_chart(df.set_index("name"))
-        px.pie(df, values="quantity", names="name", title="Stock Levels")
     else:
         st.info("No products available.")
 
