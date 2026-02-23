@@ -6,21 +6,54 @@
 #Visualize spending distribution using pie charts
 #Monthly expense trend analysis with line charts
 #Budget limit alerts and summary insights
+#Dark mode toggle
+#Multiple file upload support
 
 
 import streamlit as st
 import pandas as pd
 import plotly.express as px
+import sqlite3
+
+# Login authentication 
+user = st.text_input("User Name")
+password = st.text_input("Password",type='password')
+
+if st.button("Login"):
+    if user == 'admin' and password == '1234':
+        st.session_state.logged = True
+        st.write("Login Successful")
+    else:
+        st.write("Invalid Creditials")
+        
+if 'logged' not in st.session_state:
+    st.session_state.logged = False
+
+#logout
+if st.session_state.logged:
+    if st.button("Logout"):
+        st.session_state.logged = False
+        st.write("Logged out successfully")
+        
+if not st.session_state.logged:
+    st.stop()
 
 st.set_page_config(page_title='Personal Expense Tracker Dashboard', layout='wide')
 st.title('Personal Expense Tracker Dashboard')
 
-upload = st.file_uploader('Upload Expense Data', type=['csv'])
+upload = st.file_uploader('Upload Expense Data', type=['csv'],accept_multiple_files=True)
 if upload:
-    df = pd.read_csv(upload)
+    all_data = []
+
+    for file in upload:
+        df = pd.read_csv(file)
+        all_data.append(df)
+
+    df = pd.concat(all_data, ignore_index=True)
+
     st.subheader("Expense Data Preview")
     st.dataframe(df)
-    
+ 
 #categorization
     st.subheader("Expense Categories")
     st.write(df.groupby('Category')['Amount'].sum())
@@ -49,4 +82,31 @@ if upload:
     st.write(f"Maximum Expense: {df['Amount'].max()}")
     st.write(f"Minimum Expense: {df['Amount'].min()}")
 
+#Database save for past uploads
     
+    conn = sqlite3.connect('expense_data.db')
+    c = conn.cursor()
+    c.execute('''
+        CREATE TABLE IF NOT EXISTS expense_data (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            date TEXT,
+            category TEXT,
+            amount REAL
+        )
+    ''')
+    for index, row in df.iterrows():
+        c.execute('INSERT INTO expense_data (date, category, amount) VALUES (?, ?, ?)', (row['Date'], row['Category'], row['Amount']))
+    conn.commit()
+    conn.close()
+
+    #past uploads
+    st.subheader("Past Uploads")
+    conn = sqlite3.connect('expense_data.db')
+    c = conn.cursor()
+    c.execute("SELECT * FROM expense_data")
+    past_uploads = c.fetchall()
+    conn.close()
+
+    past_uploads_df = pd.DataFrame(past_uploads, columns=['ID', 'Date', 'Category', 'Amount'])
+    st.dataframe(past_uploads_df)
+
