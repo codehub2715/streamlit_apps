@@ -1,0 +1,7 @@
+Example content:
+streamlit
+pandas
+plotly
+matplotlib
+requests
+sqlite3 or sqlalchemy if DB based
