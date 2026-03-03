@@ -10,6 +10,7 @@
 import streamlit as st
 import pandas as pd
 import sqlite3
+import plotly.express as px
 
 st.title("College Event Management and Registration System")
 
@@ -131,6 +132,39 @@ def view_stats():
 
     st.write(f"Number of Events: {num_events}")
     st.write(f"Number of Participants: {num_participants}")
+
+    #visulization
+    col1, col2 = st.columns(2)
+    with col1:
+    #bar chart
+        conn = sqlite3.connect('event.db')
+        c = conn.cursor()
+        c.execute("SELECT event_id, COUNT(*) FROM participants GROUP BY event_id")
+        participants_by_event = c.fetchall()
+        conn.close()
+
+        if participants_by_event:
+            df = pd.DataFrame(participants_by_event, columns=["Event ID", "Count"])
+            fig = px.bar(df, x="Event ID", y="Count", title="Participants by Event")
+            st.plotly_chart(fig)
+        else:
+            st.write("No participants found.")
+
+    with col2:
+    #Pie chart
+        conn = sqlite3.connect('event.db')
+        c = conn.cursor()
+        c.execute("SELECT year, COUNT(*) FROM participants GROUP BY year")
+        participants_by_year = c.fetchall()
+        conn.close()
+
+        if participants_by_year:
+            df = pd.DataFrame(participants_by_year, columns=["Year", "Count"])
+            fig = px.pie(df, values="Count", names="Year", title="Participants by Year")
+            st.plotly_chart(fig)
+        else:
+            st.write("No participants found.")
+    
 
 #main function
 def main():
